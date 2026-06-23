@@ -1,0 +1,17 @@
+{
+  "platforms": [
+    "apple",
+    "android",
+    "web"
+  ],
+  "apple": {
+    "modules": [
+      "GoogleSignModule"
+    ]
+  },
+  "android": {
+    "modules": [
+      "com.baerae.signin.google.GoogleSignModule"
+    ]
+  }
+}

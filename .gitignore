@@ -1,0 +1,62 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.keystore
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env
+.env*.local
+
+# Claude/OMC local config (kept local, not part of the public repo)
+.claude/
+CLAUDE.md
+.omc/
+.gstack/
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
+coverage/
+
+# native module build artifacts
+modules/*/android/build/
+
+# native module binaries (built from zkup-baerae repo)
+modules/*/android/src/main/jniLibs/**/*.so
+modules/*/ios/Frameworks/**/*.a
+modules/*/ios/Frameworks/**/*.xcframework
+
+# MCP config
+.mcp.json
+.playwright-mcp/
