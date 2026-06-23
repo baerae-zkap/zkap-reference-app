@@ -1,16 +1,16 @@
-> 🌐 English: [LOGGING.en.md](./LOGGING.en.md)
+> 🌐 한국어: [LOGGING.ko.md](./LOGGING.ko.md)
 
-# Android 로그 확인 가이드
+# Android Logging Guide
 
-이 문서는 ZKAP Reference 앱의 Android 로그를 확인하는 **검증된 표준 절차**를 정의합니다.
+This document defines the **verified standard procedure** for inspecting Android logs from the ZKAP Reference app.
 
-> **Metro tasks/*.output 파일은 사용하지 않는다** — background task 종료 시 Metro가 함께 종료되어 로그가 단절됨.
+> **Do not use Metro tasks/*.output files** — Metro exits when the background task ends, cutting off the log stream.
 
 ---
 
-## 표준 절차 (검증됨)
+## Standard Procedure (Verified)
 
-### 변수 설정
+### Set Variables
 
 ```bash
 ADB=~/Library/Android/sdk/platform-tools/adb
@@ -19,30 +19,30 @@ PKG=com.example.zkapref
 echo "Using device: $SERIAL"
 ```
 
-### Step 1: Metro 서버 확인 및 시작
+### Step 1: Check and Start Metro Server
 
 ```bash
-# 실행 중인지 확인
+# Check if Metro is running
 curl -s --max-time 2 http://localhost:8081/status
-# "packager-status:running" 이면 OK
+# "packager-status:running" means OK
 
-# 실행 안 됨이면 백그라운드 시작
+# If not running, start in the background
 nohup bash -c 'set -a && . .env && set +a && npx expo start --port 8081 2>&1' >> /tmp/metro-zkap.log &
 sleep 10 && curl -s --max-time 3 http://localhost:8081/status
 
-# Metro 로그 확인
+# Check Metro logs
 tail -20 /tmp/metro-zkap.log
 ```
 
-### Step 2: ADB reverse 설정
+### Step 2: Configure ADB Reverse
 
-기기에서 localhost:8081로 Mac의 Metro에 접근하려면:
+To allow the device to reach Mac's Metro at localhost:8081:
 
 ```bash
 $ADB -s $SERIAL reverse tcp:8081 tcp:8081
 ```
 
-### Step 3: 버퍼 클리어 + 앱 재시작
+### Step 3: Clear Buffer + Restart App
 
 ```bash
 $ADB -s $SERIAL logcat -c
@@ -52,87 +52,87 @@ $ADB -s $SERIAL shell am start -n $PKG/.MainActivity \
   -d "zkapref://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
 ```
 
-### Step 4: 로그 수집 (25초 대기 후)
+### Step 4: Collect Logs (after 25-second wait)
 
 ```bash
 sleep 25
 $ADB -s $SERIAL logcat -d "ReactNativeJS:V" "*:S" | tail -50
 
-# 키워드 필터링
+# Filter by keyword
 $ADB -s $SERIAL logcat -d "ReactNativeJS:V" "*:S" | grep -i "KEYWORD"
 ```
 
 ---
 
-## 빌드 (최초 설치 or 네이티브 변경 시)
+## Build (First Install or After Native Changes)
 
 ```bash
 npm run android
-# BUILD SUCCESSFUL 후 Metro 자동 시작 + 앱 설치
+# After BUILD SUCCESSFUL, Metro starts automatically and the app is installed
 ```
 
-> **주의**: `npx expo start` 단독 사용 금지. 반드시 `npm run android`로 빌드.
+> **Important**: Do not use `npx expo start` standalone. Always build with `npm run android`.
 
 ---
 
-## 실시간 로그 스트리밍
+## Live Log Streaming
 
 ```bash
 $ADB -s $SERIAL logcat "ReactNativeJS:V" "*:S" | grep -i "KEYWORD"
-# Ctrl+C로 중단
+# Press Ctrl+C to stop
 ```
 
 ---
 
-## 트러블슈팅
+## Troubleshooting
 
-### 로그가 전혀 안 나올 때
-
-```bash
-curl -s http://localhost:8081/status          # Metro 실행 확인
-$ADB devices                                   # 기기 연결 확인
-$ADB -s $SERIAL shell pidof $PKG              # 앱 실행 확인
-$ADB -s $SERIAL reverse --list                # reverse 설정 확인
-```
-
-### "more than one device/emulator" 에러
+### No Logs at All
 
 ```bash
-$ADB devices             # serial 목록 확인
-SERIAL=<your-device-serial>   # 실기기 serial 직접 지정
+curl -s http://localhost:8081/status          # Verify Metro is running
+$ADB devices                                   # Verify device is connected
+$ADB -s $SERIAL shell pidof $PKG              # Verify app is running
+$ADB -s $SERIAL reverse --list                # Verify reverse is configured
 ```
 
-### Metro 포트 충돌
+### "more than one device/emulator" Error
+
+```bash
+$ADB devices                        # List serials
+SERIAL=<your-device-serial>         # Specify physical device serial directly
+```
+
+### Metro Port Conflict
 
 ```bash
 pkill -f "node.*expo\|node.*metro" 2>/dev/null && sleep 2
 nohup bash -c 'set -a && . .env && set +a && npx expo start --port 8081 2>&1' >> /tmp/metro-zkap.log &
 ```
 
-### 앱이 구 번들을 사용할 때
+### App is Using an Old Bundle
 
-Metro가 새 번들을 제공하려면:
-1. Metro 실행 중 (`curl http://localhost:8081/status`)
-2. `adb reverse tcp:8081 tcp:8081` 설정됨
-3. 앱 실행 시 Metro URL deep link 전달 (Step 3 명령어 사용)
+For Metro to serve the new bundle:
+1. Metro is running (`curl http://localhost:8081/status`)
+2. `adb reverse tcp:8081 tcp:8081` is configured
+3. The app is launched with the Metro URL deep link (use the Step 3 command)
 
 ---
 
-## 로그 레벨
+## Log Levels
 
-| Logcat 태그 | 의미 |
-|-------------|------|
+| Logcat Tag | Meaning |
+|------------|---------|
 | `I ReactNativeJS` | `console.log` |
 | `W ReactNativeJS` | `console.warn` |
-| `E ReactNativeJS` | `console.error` / 예외 |
+| `E ReactNativeJS` | `console.error` / exception |
 
 ---
 
-## 주요 정보
+## Quick Reference
 
-| 항목 | 값 |
-|------|-----|
-| 패키지명 | `com.example.zkapref` |
-| Metro 포트 | `8081` |
-| Metro 로그 파일 | `/tmp/metro-zkap.log` |
-| ADB 경로 | `~/Library/Android/sdk/platform-tools/adb` |
+| Item | Value |
+|------|-------|
+| Package name | `com.example.zkapref` |
+| Metro port | `8081` |
+| Metro log file | `/tmp/metro-zkap.log` |
+| ADB path | `~/Library/Android/sdk/platform-tools/adb` |
